@@ -1,0 +1,69 @@
+### Verbo GET – listar todos
+GET http://localhost:8000/funcionario/ HTTP/1.1
+### Verbo GET – listar um
+GET http://localhost:8000/funcionario/10 HTTP/1.1
+### Verbo POST – adicionar
+POST http://127.0.0.1:8000/funcionario/ HTTP/1.1
+### Verbo PUT – atualiza
+PUT http://127.0.0.1:8000/funcionario/2 HTTP/1.1
+### Verbo DELETE - excluir
+
+
+## Verbo GET - lsitar todos
+GET http://localhost:8000/funcionario/HTTP/1.1
+
+### Verbo GET - listar todos
+Send Request
+GET http://localhost:8000/funcionario/ HTTP/1.1
+
+
+### Verbo GET - listar um
+Send Request
+GET http://localhost:8000/funcionario/10 HTTP/1.1
+
+
+### Verbo POST - adicionar
+Send Request
+POST http://127.0.0.1:8000/funcionario/ HTTP/1.1
+content-type: application/json
+
+{
+  "nome": "Luciano Coelho",
+  "matricula": "lu12353",
+  "cpf": 1,
+  "telefone": "tel2383738",
+  "grupo": 1,
+  "senha": "ee29eb4a8725678278ac4320e7"
+}
+
+
+### Verbo PUT - atualiza
+Send Request
+PUT http://127.0.0.1:8000/funcionario/2 HTTP/1.1
+content-type: application/json
+
+{
+  "nome": "Luciano Coelho",
+  "matricula": "lu12353",
+  "cpf": 1,
+  "telefone": "tel2383738",
+  "grupo": 1,
+  "senha": "dc7378a6b6316017b81c510720e7"
+}
+
+
+### Verbo DELETE - excluir
+Send Request
+DELETE http://127.0.0.1:8000/funcionario/3 HTTP/1.1
+
+HTTP/1.1 200 OK
+date: Mon, 02 Mar 2026 20:10:07 GMT
+server: uvicorn
+content-length: 45
+content-type: application/json
+connection: close
+
+{
+  "msg": "funcionario delete executado",
+  "id": 3
+}
