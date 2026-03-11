@@ -22,4 +22,4 @@ def put_cliente(id: int, corpo: ClienteUpdate):
 
 @router.delete("/cliente/{id}", tags=["Cliente"], status_code=200)
 def delete_cliente(id: int):
-    return {"msg": "cliente delete executado", "id":id}
+    return {"msg": "cliente delete executado", "id":id} 
