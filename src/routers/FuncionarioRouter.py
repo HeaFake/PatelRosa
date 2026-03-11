@@ -1,7 +1,7 @@
 #Erica Cristina Silva Chagas
 
 from fastapi import APIRouter
-from domain.schemas.FuncionarioSchema import Funcionario
+from domain.schemas.FuncionarioSchema import FuncionarioCreate, FuncionarioUpdate, FuncionarioResponse
 router = APIRouter()
 # Criar as rotas/endpoints: GET, POST, PUT, DELETE
 @router.get("/funcionario/", tags=["Funcionário"], status_code=200)
@@ -13,11 +13,11 @@ def get_funcionario(id: int):
     return {"msg": "funcionario get um executado"}
 
 @router.post("/funcionario/", tags=["Funcionário"], status_code=200)
-def post_funcionario(corpo: Funcionario):
+def post_funcionario(corpo: FuncionarioCreate):
     return {"msg": "funcionario post executado", "nome": corpo.nome, "cpf": corpo.cpf, "telefone": corpo.telefone}
 
 @router.put("/funcionario/{id}", tags=["Funcionário"], status_code=200)
-def put_funcionario(id: int, corpo: Funcionario):
+def put_funcionario(id: int, corpo: FuncionarioUpdate):
     return {"msg": "funcionario put executado", "id":id, "nome": corpo.nome, "cpf": corpo.cpf, "telefone": corpo.telefone}
 
 @router.delete("/funcionario/{id}", tags=["Funcionário"], status_code=200)

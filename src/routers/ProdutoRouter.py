@@ -1,7 +1,7 @@
 #Erica Cristina Silva Chagas
 
 from fastapi import APIRouter
-from domain.schemas.ProdutoSchema import Produto
+from domain.schemas.ProdutoSchema import ProdutoCreate, ProdutoUpdate, ProdutoResponse
 
 router = APIRouter()
 
@@ -14,7 +14,7 @@ def get_produto_id(id: int):
     return {"msg": "produto get um executado", "id": id}
 
 @router.post("/produto/", tags=["Produto"])
-def post_produto(corpo: Produto):
+def post_produto(corpo: ProdutoCreate):
     return {
         "msg": "produto criado",
         "nome": corpo.nome,
@@ -22,7 +22,7 @@ def post_produto(corpo: Produto):
     }
 
 @router.put("/produto/{id}", tags=["Produto"])
-def put_produto(id: int, corpo: Produto):
+def put_produto(id: int, corpo: ProdutoUpdate):
     return {
         "msg": "produto atualizado",
         "id": id,
