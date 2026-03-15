@@ -1,4 +1,4 @@
-# Erica Cristina Silva Chagas
+#Erica cristina Silva Chagas
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -17,13 +17,16 @@ from infra.database import get_db
 
 router = APIRouter()
 
+# Criar as rotas/endpoints: GET, POST, PUT, DELETE
+
 
 @router.get("/produto/", response_model=List[ProdutoResponse], tags=["Produto"], status_code=status.HTTP_200_OK)
-async def get_produtos(db: Session = Depends(get_db)):
+async def get_produto(db: Session = Depends(get_db)):
     """Retorna todos os produtos"""
     try:
         produtos = db.query(ProdutoDB).all()
         return produtos
+
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -33,7 +36,7 @@ async def get_produtos(db: Session = Depends(get_db)):
 
 @router.get("/produto/{id}", response_model=ProdutoResponse, tags=["Produto"], status_code=status.HTTP_200_OK)
 async def get_produto(id: int, db: Session = Depends(get_db)):
-    """Retorna um produto pelo ID"""
+    """Retorna um produto específico pelo ID"""
     try:
         produto = db.query(ProdutoDB).filter(ProdutoDB.id == id).first()
 
@@ -60,6 +63,7 @@ async def post_produto(produto_data: ProdutoCreate, db: Session = Depends(get_db
     try:
 
         novo_produto = ProdutoDB(
+            id=None,
             nome=produto_data.nome,
             descricao=produto_data.descricao,
             foto=produto_data.foto,
@@ -82,7 +86,7 @@ async def post_produto(produto_data: ProdutoCreate, db: Session = Depends(get_db
 
 @router.put("/produto/{id}", response_model=ProdutoResponse, tags=["Produto"], status_code=status.HTTP_200_OK)
 async def put_produto(id: int, produto_data: ProdutoUpdate, db: Session = Depends(get_db)):
-    """Atualiza um produto"""
+    """Atualiza um produto existente"""
     try:
         produto = db.query(ProdutoDB).filter(ProdutoDB.id == id).first()
 
@@ -126,6 +130,8 @@ async def delete_produto(id: int, db: Session = Depends(get_db)):
 
         db.delete(produto)
         db.commit()
+
+        return None
 
     except HTTPException:
         raise
