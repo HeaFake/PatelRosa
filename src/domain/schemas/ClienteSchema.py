@@ -1,3 +1,5 @@
+#Erica Cristina Silva Chagas
+
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
 
@@ -17,3 +19,4 @@ class ClienteResponse(BaseModel):
     nome: str
     cpf: str
     telefone: str
+    

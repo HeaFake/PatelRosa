@@ -1,3 +1,5 @@
+#Erica Cristina Silva Chagas
+
 from fastapi import FastAPI
 from settings import HOST, PORT, RELOAD
 import uvicorn

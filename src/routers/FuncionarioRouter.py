@@ -138,3 +138,5 @@ async def delete_funcionario(id: int, db: Session = Depends(get_db)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao deletar funcionário: {str(e)}"
         )
+    
+    
