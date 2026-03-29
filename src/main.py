@@ -3,7 +3,9 @@
 from fastapi import FastAPI
 from settings import HOST, PORT, RELOAD
 import uvicorn
+
 # import das classes com as rotas/endpoints
+from routers import AuthRouter
 from routers import FuncionarioRouter
 from routers import ClienteRouter
 from routers import ProdutoRouter
@@ -30,6 +32,7 @@ async def root():
 "http://127.0.0.1:8000/redoc" }
 
 # incluir as rotas/endpoints no FastAPI
+app.include_router(AuthRouter.router)
 app.include_router(FuncionarioRouter.router)
 app.include_router(ClienteRouter.router)
 app.include_router(ProdutoRouter.router)
