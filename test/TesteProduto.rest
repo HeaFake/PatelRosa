@@ -1,5 +1,6 @@
-#Erica Cristina Silva Chagas
-### GET produtos
+# Erica Cristina Silva Chagas
+
+### GET todos produtos
 GET http://localhost:8000/produto/
 
 ### GET produto por id
@@ -10,10 +11,10 @@ POST http://localhost:8000/produto/
 content-type: application/json
 
 {
-"nome": "Pastel de Queijo",
-"descricao": "Pastel tradicional",
-"foto": "123",
-"valor_unitario": 10.50
+  "nome": "Pastel de Queijo",
+  "descricao": "Pastel tradicional",
+  "foto": "foto_pastel.png",
+  "valor_unitario": 10.50
 }
 
 ### PUT produto
@@ -21,10 +22,10 @@ PUT http://localhost:8000/produto/1
 content-type: application/json
 
 {
-"nome": "Pastel de Queijo",
-"descricao": "Pastel tradicional",
-"foto": "123",
-"valor_unitario": 10.50
+  "nome": "Pastel de Queijo Especial",
+  "descricao": "Pastel tradicional",
+  "foto": "foto_pastel.png",
+  "valor_unitario": 12.00
 }
 
 ### DELETE produto
