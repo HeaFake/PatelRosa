@@ -1,4 +1,4 @@
-#LETÍCIA STEFANIE MACIEL SILVA
+#Érica Cristina Silva Chagas
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List

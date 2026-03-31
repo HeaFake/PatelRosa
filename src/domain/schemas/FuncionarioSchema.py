@@ -27,3 +27,6 @@ class FuncionarioResponse(BaseModel):
     cpf: str
     telefone: str
     grupo: int
+
+
+    #Érica Cristina Silva Chagas
