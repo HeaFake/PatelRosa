@@ -1,6 +1,12 @@
-#Erica cristina Silva Chagas
+# Erica Cristina Silva Chagas
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
+
+from services.AuditoriaService import AuditoriaService
+
+from infra.rate_limit import limiter, get_rate_limit
+from slowapi.errors import RateLimitExceeded
+
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -26,7 +32,10 @@ router = APIRouter()
 
 
 @router.get("/produtos-publica/", response_model=List[ProdutoPublicResponse], tags=["Produto"], status_code=status.HTTP_200_OK)
-async def get_produto(db: Session = Depends(get_db)):
+
+
+@limiter.limit(get_rate_limit("critical"))
+async def get_produto(request: Request, db: Session = Depends(get_db)):
     """Retorna todos os produtos"""
     try:
         produtos = db.query(ProdutoDB).all()
@@ -40,7 +49,9 @@ async def get_produto(db: Session = Depends(get_db)):
 
 
 @router.get("/produto/", response_model=List[ProdutoResponse], tags=["Produto"], status_code=status.HTTP_200_OK)
-async def get_produto(db: Session = Depends(get_db),current_user: FuncionarioAuth = Depends(get_current_active_user)):
+@limiter.limit(get_rate_limit("critical"))
+
+async def get_produto(request: Request, db: Session = Depends(get_db),current_user: FuncionarioAuth = Depends(get_current_active_user)):
     """Retorna todos os produtos"""
     try:
         produtos = db.query(ProdutoDB).all()
@@ -54,7 +65,9 @@ async def get_produto(db: Session = Depends(get_db),current_user: FuncionarioAut
 
 
 @router.get("/produto/{id}", response_model=ProdutoResponse, tags=["Produto"], status_code=status.HTTP_200_OK)
-async def get_produto(id: int, db: Session = Depends(get_db), current_user: FuncionarioAuth = Depends(get_current_active_user)):
+@limiter.limit(get_rate_limit("critical"))
+
+async def get_produto(request: Request, id: int, db: Session = Depends(get_db), current_user: FuncionarioAuth = Depends(get_current_active_user)):
     """Retorna um produto específico pelo ID"""
     try:
         produto = db.query(ProdutoDB).filter(ProdutoDB.id == id).first()
@@ -77,7 +90,10 @@ async def get_produto(id: int, db: Session = Depends(get_db), current_user: Func
 
 
 @router.post("/produto/", response_model=ProdutoResponse, status_code=status.HTTP_201_CREATED, tags=["Produto"])
-async def post_produto(produto_data: ProdutoCreate, db: Session = Depends(get_db), current_user: FuncionarioAuth = Depends(require_group([1]))):
+
+
+@limiter.limit(get_rate_limit("critical"))
+async def post_produto(request: Request, produto_data: ProdutoCreate, db: Session = Depends(get_db), current_user: FuncionarioAuth = Depends(require_group([1]))):
     """Cria um novo produto"""
     try:
 
@@ -93,6 +109,18 @@ async def post_produto(produto_data: ProdutoCreate, db: Session = Depends(get_db
         db.commit()
         db.refresh(novo_produto)
 
+         # Depois de tudo executado e antes do return, registra a ação na auditoria
+        AuditoriaService.registrar_acao(
+            db=db,
+            funcionario_id=current_user.id,
+            acao="CREATE",
+            recurso="PRODUTO",
+            recurso_id=novo_produto.id,
+            dados_antigos=None,
+            dados_novos=novo_produto, # Objeto SQLAlchemy com dados novos
+            request=request # Request completo para capturar IP e user agent
+        )
+
         return novo_produto
 
     except Exception as e:
@@ -104,7 +132,8 @@ async def post_produto(produto_data: ProdutoCreate, db: Session = Depends(get_db
 
 
 @router.put("/produto/{id}", response_model=ProdutoResponse, tags=["Produto"], status_code=status.HTTP_200_OK)
-async def put_produto(id: int, produto_data: ProdutoUpdate, db: Session = Depends(get_db), current_user: FuncionarioAuth = Depends(require_group([1]))):
+@limiter.limit(get_rate_limit("critical"))
+async def put_produto(request: Request, id: int, produto_data: ProdutoUpdate, db: Session = Depends(get_db), current_user: FuncionarioAuth = Depends(require_group([1]))):
     """Atualiza um produto existente"""
     try:
         produto = db.query(ProdutoDB).filter(ProdutoDB.id == id).first()
@@ -114,6 +143,10 @@ async def put_produto(id: int, produto_data: ProdutoUpdate, db: Session = Depend
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Produto não encontrado"
             )
+        
+           # não pode manter referencia com funcionário, para que o auditoria possa comparar
+        # por isso a cópia do __dict__
+        dados_antigos_obj = produto.__dict__.copy()
 
         update_data = produto_data.model_dump(exclude_unset=True)
 
@@ -122,6 +155,18 @@ async def put_produto(id: int, produto_data: ProdutoUpdate, db: Session = Depend
 
         db.commit()
         db.refresh(produto)
+
+           # Depois de tudo executado e antes do return, registra a ação na auditoria
+        AuditoriaService.registrar_acao(
+        db=db,
+        funcionario_id=current_user.id,
+        acao="UPDATE",
+        recurso="PRODUTO",
+        recurso_id=produto.id,
+        dados_antigos=dados_antigos_obj, # Objeto SQLAlchemy com dados antigos
+        dados_novos=produto, # Objeto SQLAlchemy com dados novos
+        request=request # Request completo para capturar IP e user agent
+    )
 
         return produto
 
@@ -136,7 +181,8 @@ async def put_produto(id: int, produto_data: ProdutoUpdate, db: Session = Depend
 
 
 @router.delete("/produto/{id}", status_code=status.HTTP_204_NO_CONTENT, tags=["Produto"], summary="Remover produto")
-async def delete_produto(id: int, db: Session = Depends(get_db),current_user: FuncionarioAuth = Depends(require_group([1]))):
+@limiter.limit(get_rate_limit("critical"))
+async def delete_produto(request: Request, id: int, db: Session = Depends(get_db),current_user: FuncionarioAuth = Depends(require_group([1]))):
     """Remove um produto"""
     try:
         produto = db.query(ProdutoDB).filter(ProdutoDB.id == id).first()
@@ -146,6 +192,18 @@ async def delete_produto(id: int, db: Session = Depends(get_db),current_user: Fu
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Produto não encontrado"
             )
+        
+          # Depois de tudo executado e antes do return, registra a ação na auditoria
+        AuditoriaService.registrar_acao(
+        db=db,
+        funcionario_id=current_user.id,
+        acao="DELETE",
+        recurso="PRODUTO",
+        recurso_id=produto.id,
+        dados_antigos=produto,
+        dados_novos=None,
+        request=request
+        )
 
         db.delete(produto)
         db.commit()

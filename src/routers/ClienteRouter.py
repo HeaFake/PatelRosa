@@ -1,6 +1,12 @@
 # Erica Cristina Silva Chagas
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
+
+from services.AuditoriaService import AuditoriaService
+
+from infra.rate_limit import limiter, get_rate_limit
+from slowapi.errors import RateLimitExceeded
+
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -23,7 +29,9 @@ router = APIRouter()
 
 
 @router.get("/cliente/", response_model=List[ClienteResponse], tags=["Cliente"], status_code=status.HTTP_200_OK)
-async def get_clientes(db: Session = Depends(get_db), current_user: FuncionarioAuth = Depends(get_current_active_user)):
+@limiter.limit(get_rate_limit("critical"))
+
+async def get_clientes(request: Request, db: Session = Depends(get_db), current_user: FuncionarioAuth = Depends(get_current_active_user)):
     """Retorna todos os clientes"""
     try:
         clientes = db.query(ClienteDB).all()
@@ -36,7 +44,9 @@ async def get_clientes(db: Session = Depends(get_db), current_user: FuncionarioA
 
 
 @router.get("/cliente/{id}", response_model=ClienteResponse, tags=["Cliente"], status_code=status.HTTP_200_OK)
-async def get_cliente(id: int, db: Session = Depends(get_db),  current_user: FuncionarioAuth = Depends(get_current_active_user)):
+
+@limiter.limit(get_rate_limit("critical"))
+async def get_cliente(request: Request, id: int, db: Session = Depends(get_db),  current_user: FuncionarioAuth = Depends(get_current_active_user)):
     """Retorna um cliente pelo ID"""
     try:
         cliente = db.query(ClienteDB).filter(ClienteDB.id == id).first()
@@ -59,7 +69,9 @@ async def get_cliente(id: int, db: Session = Depends(get_db),  current_user: Fun
 
 
 @router.post("/cliente/", response_model=ClienteResponse, status_code=status.HTTP_201_CREATED, tags=["Cliente"])
-async def post_cliente(cliente_data: ClienteCreate, db: Session = Depends(get_db), current_user: FuncionarioAuth = Depends(require_group([1,3]))):
+
+@limiter.limit(get_rate_limit("critical"))
+async def post_cliente(request: Request, cliente_data: ClienteCreate, db: Session = Depends(get_db), current_user: FuncionarioAuth = Depends(require_group([1,3]))):
     """Cria um novo cliente"""
     try:
         # Verifica CPF duplicado
@@ -84,6 +96,18 @@ async def post_cliente(cliente_data: ClienteCreate, db: Session = Depends(get_db
         db.commit()
         db.refresh(novo_cliente)
 
+         # Depois de tudo executado e antes do return, registra a ação na auditoria
+        AuditoriaService.registrar_acao(
+            db=db,
+            funcionario_id=current_user.id,
+            acao="CREATE",
+            recurso="CLIENTE",
+            recurso_id=novo_cliente.id,
+            dados_antigos=None,
+            dados_novos=novo_cliente, # Objeto SQLAlchemy com dados novos
+            request=request # Request completo para capturar IP e user agent
+        )
+
         return novo_cliente
 
     except HTTPException:
@@ -97,7 +121,9 @@ async def post_cliente(cliente_data: ClienteCreate, db: Session = Depends(get_db
 
 
 @router.put("/cliente/{id}", response_model=ClienteResponse, tags=["Cliente"], status_code=status.HTTP_200_OK)
-async def put_cliente(id: int, cliente_data: ClienteUpdate, db: Session = Depends(get_db), current_user: FuncionarioAuth = Depends(require_group([1,3]))):
+@limiter.limit(get_rate_limit("critical"))
+
+async def put_cliente(request: Request, id: int, cliente_data: ClienteUpdate, db: Session = Depends(get_db), current_user: FuncionarioAuth = Depends(require_group([1,3]))):
     """Atualiza um cliente"""
     try:
         cliente = db.query(ClienteDB).filter(ClienteDB.id == id).first()
@@ -120,6 +146,11 @@ async def put_cliente(id: int, cliente_data: ClienteUpdate, db: Session = Depend
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Já existe um cliente com este CPF"
             )
+        
+         # não pode manter referencia com funcionário, para que o auditoria possa comparar
+        # por isso a cópia do __dict__
+        dados_antigos_obj = cliente.__dict__.copy()
+
 
         update_data = cliente_data.model_dump(exclude_unset=True)
 
@@ -129,6 +160,18 @@ async def put_cliente(id: int, cliente_data: ClienteUpdate, db: Session = Depend
         db.commit()
         db.refresh(cliente)
 
+         # Depois de tudo executado e antes do return, registra a ação na auditoria
+        AuditoriaService.registrar_acao(
+        db=db,
+        funcionario_id=current_user.id,
+        acao="UPDATE",
+        recurso="CLIENTE",
+        recurso_id=cliente.id,
+        dados_antigos=dados_antigos_obj, # Objeto SQLAlchemy com dados antigos
+        dados_novos=cliente, # Objeto SQLAlchemy com dados novos
+        request=request # Request completo para capturar IP e user agent
+    )
+       
         return cliente
 
     except HTTPException:
@@ -142,7 +185,9 @@ async def put_cliente(id: int, cliente_data: ClienteUpdate, db: Session = Depend
 
 
 @router.delete("/cliente/{id}", status_code=status.HTTP_204_NO_CONTENT, tags=["Cliente"], summary="Remover cliente")
-async def delete_cliente(id: int, db: Session = Depends(get_db),current_user: FuncionarioAuth = Depends(require_group([1]))):
+@limiter.limit(get_rate_limit("critical"))
+
+async def delete_cliente(request: Request, id: int, db: Session = Depends(get_db),current_user: FuncionarioAuth = Depends(require_group([1]))):
     """Remove um cliente"""
     try:
         cliente = db.query(ClienteDB).filter(ClienteDB.id == id).first()
@@ -155,6 +200,18 @@ async def delete_cliente(id: int, db: Session = Depends(get_db),current_user: Fu
 
         db.delete(cliente)
         db.commit()
+
+        # Depois de tudo executado e antes do return, registra a ação na auditoria
+        AuditoriaService.registrar_acao(
+        db=db,
+        funcionario_id=current_user.id,
+        acao="DELETE",
+        recurso="CLIENTE",
+        recurso_id=cliente.id,
+        dados_antigos=cliente,
+        dados_novos=None,
+        request=request
+        )
 
         return None
 
