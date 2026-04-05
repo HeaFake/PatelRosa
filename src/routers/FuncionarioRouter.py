@@ -25,6 +25,7 @@ from infra.dependencies import get_current_active_user, require_group
 
 router = APIRouter()
 
+
 @router.get("/funcionario/", response_model=List[FuncionarioResponse], tags=["Funcionário"], status_code=status.HTTP_200_OK) 
 
 @limiter.limit(get_rate_limit("critical"))
