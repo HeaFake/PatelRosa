@@ -11,6 +11,33 @@ from infra.database import get_db
 from infra.dependencies import require_group, get_current_active_user
 from infra.rate_limit import limiter, get_rate_limit
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#tete
+
+
+
+
+
+
+
+
+
 router = APIRouter()
 
 @router.get(
