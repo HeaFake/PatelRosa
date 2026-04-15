@@ -1,0 +1,12 @@
+pycache/
+venv/
+.venv/
+Include/
+Lib/
+Scripts/
+share/
+pyvenv.cfg
+.idea
+.vscode
+comandas_db.db
+src/.env
